@@ -20,5 +20,5 @@
     "seq_sent_length": 300,
     "top_n_keys": 5,
     "num_medterms": 241,
-    "tag_decoderdir": "/home/mmvg/Desktop/COVID/reports/mesh_renum.pkl"
+    "tag_decoderdir": "./report/mesh_renum.pkl"
   }

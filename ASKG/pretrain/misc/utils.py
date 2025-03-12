@@ -174,6 +174,7 @@ def build_optimizer(params, opt):
 
 class NoamOpt:
     "Optim wrapper that implements rate."
+    # 基于基础优化器的包装类
 
     def __init__(self, model_size, factor, warmup, optimizer):
         self.optimizer = optimizer

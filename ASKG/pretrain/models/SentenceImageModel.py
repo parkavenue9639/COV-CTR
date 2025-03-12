@@ -62,6 +62,7 @@ class OpenAIGPTConfig(object):
         initializer_range=0.02,
         att_feat_size=1024,
         n_ann=49,
+        tag_decoderdir="../../../reports/processed_fh21_precise_tag/tagdecoder.pkl",
     ):
         """Constructs OpenAIGPTConfig.
 
@@ -86,7 +87,7 @@ class OpenAIGPTConfig(object):
                 initializing all weight matrices.
         """
         if isinstance(vocab_size_or_config_json_file, str) or (sys.version_info[0] == 2
-                        and isinstance(vocab_size_or_config_json_file, unicode)):
+                        and isinstance(vocab_size_or_config_json_file, str)):
             with open(vocab_size_or_config_json_file, "r", encoding="utf-8") as reader:
                 json_config = json.loads(reader.read())
             for key, value in json_config.items():
@@ -733,9 +734,10 @@ class DecoderModel(OpenAIGPTPreTrainedModel):
 
 
 class SentenceLMHeadModel(OpenAIGPTPreTrainedModel):
-    def __init__(self, tag_decoder, config):
+    def __init__(self, tag_decoder, config, device):
         super(SentenceLMHeadModel, self).__init__(config)
         self.config = config
+        self.device = device
 
         self.tokens_embed = nn.Embedding(config.vocab_size, config.n_embd)
 
@@ -747,10 +749,10 @@ class SentenceLMHeadModel(OpenAIGPTPreTrainedModel):
         # self.set_num_special_tokens(config.n_special)
 
         # TODO
-        self.img_feat_size = config.img_feat_size
-        self.img_ann = config.img_ann
-        self.att_feat_size = config.att_feat_size
-        self.n_ann = config.n_ann
+        self.img_feat_size = config.img_feat_size  # 1024 图像特征的维度
+        self.img_ann = config.img_ann  # 49 每张图像的特征数
+        self.att_feat_size = config.att_feat_size  # 512 注意力特征维度
+        self.n_ann = config.n_ann  # 300 注释的最大数量
         self.seq_sent_length = config.seq_sent_length
         self.d_model = config.n_embd
 
@@ -798,11 +800,11 @@ class SentenceLMHeadModel(OpenAIGPTPreTrainedModel):
         start_token = 2
         end_token = 3
         batch_size = att_feats.size(0)
-        att_feats = att_feats.view(batch_size, self.img_ann, self.img_feat_size)
+        att_feats = att_feats.view(batch_size, self.img_ann, self.img_feat_size)  # batch_size,每张图像的特征数，图像特征的维度
         att_feats = self.img_att_embed(att_feats)
 
-        unfinish = torch.zeros(batch_size).long().cuda()
-        ys = torch.ones(batch_size, 1).fill_(start_token).long().cuda()  # start token = 0
+        unfinish = torch.zeros(batch_size).long().to(self.device)
+        ys = torch.ones(batch_size, 1).fill_(start_token).long().to(self.device) # start token = 0
         tag_hidden_states = self.encoder(att_feats)
         tag_logits = self.tag_head(tag_hidden_states)
 

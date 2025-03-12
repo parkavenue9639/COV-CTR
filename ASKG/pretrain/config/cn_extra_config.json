@@ -20,5 +20,5 @@
     "seq_sent_length": 300,
     "top_n_keys": 5,
     "num_medterms": 1256,
-    "tag_decoderdir": "/home/mmvg/Desktop/COVID/reports/processed_new_papers_extra_tag/tagdecoder.pkl"
+    "tag_decoderdir": "./report/processed_new_papers_extra_tag/tagdecoder.pkl"
   }
