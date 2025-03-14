@@ -48,7 +48,7 @@ class Fh21Dataset(Dataset):
         abstracts_labels = torch.from_numpy(abstracts_labels).long()
 
         # 处理医学术语标签
-        medterm_labels = np.zeros(self.num_medterm)
+        medterm_labels = np.zeros(229)
         medterms = self.data[index][3]
         for medterm in medterms:
             # medterm_labels[medterm] = 1

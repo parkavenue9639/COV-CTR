@@ -7,6 +7,7 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from bert_score import score as BERTSCORE
 
 import numpy as np
 import json
@@ -78,8 +79,6 @@ def evaluate(id2truth, id2sample, save_to='./results/', split='val'):
 
     cands = [''.join(v).replace(' ', '') for k, v in id2sample.items()]
     refs = [''.join(id2truth[k]).replace(' ', '') for k, v in id2sample.items()]
-   
-    from bert_score import score as BERTSCORE
 
     P, R, F1 = BERTSCORE(cands, refs, bert="bert-base-chinese")
     print('BERTSCORE:\t', P.mean(), R.mean(), F1.mean())

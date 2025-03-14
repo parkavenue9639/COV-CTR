@@ -387,11 +387,13 @@ class DecoderBlock(nn.Module):
 
 class TagHead(nn.Module):
     """ Language Model Head for the transformer """
+    # 主要是一个二分类标签预测头
 
     def __init__(self, config):
         super(TagHead, self).__init__()
         self.n_embd = config.n_embd
 
+        # 通过线性层转化为一维标量，再通过sigmoid转化成概率
         self.decoder = nn.Sequential(
             nn.Linear(self.n_embd, 1, bias=False),
             nn.Sigmoid()
@@ -787,9 +789,12 @@ class SentenceLMHeadModel(OpenAIGPTPreTrainedModel):
             batch_size = att_feats.size(0)
             att_feats = att_feats.view(batch_size, self.img_ann, self.img_feat_size)
             att_feats = self.img_att_embed(att_feats)
+            # print("att_feats shape after img_att_embed: {}".format(att_feats.shape))  # [16, 49, 512]
             tag_hidden_states = self.encoder(att_feats)
+            # print("tag_hidden_states shape: {}".format(tag_hidden_states.shape))  # [16, 229, 512]
         
-        tag_logits = self.tag_head(tag_hidden_states)
+        tag_logits = self.tag_head(tag_hidden_states)  # [16, 229]
+        # print("tag_logits: {}".format(tag_logits.shape))
         hidden_states = self.decoder(input_ids, position_ids, token_type_ids, tag_hidden_states)
         lm_logits = self.lm_head(hidden_states)
 
@@ -800,11 +805,12 @@ class SentenceLMHeadModel(OpenAIGPTPreTrainedModel):
         start_token = 2
         end_token = 3
         batch_size = att_feats.size(0)
+        # [16,49,1024]
         att_feats = att_feats.view(batch_size, self.img_ann, self.img_feat_size)  # batch_size,每张图像的特征数，图像特征的维度
         att_feats = self.img_att_embed(att_feats)
 
         unfinish = torch.zeros(batch_size).long().to(self.device)
-        ys = torch.ones(batch_size, 1).fill_(start_token).long().to(self.device) # start token = 0
+        ys = torch.ones(batch_size, 1).fill_(start_token).long().to(self.device)  # start token = 0
         tag_hidden_states = self.encoder(att_feats)
         tag_logits = self.tag_head(tag_hidden_states)
 

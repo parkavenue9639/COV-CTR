@@ -158,13 +158,15 @@ def images_train():
         # compute output
         output_global, fm_global, pool_global = cnn_model(imgs)
         
-        patchs_var = Attention_gen_patchs(input, fm_global)
+        patchs_var = Attention_gen_patchs(imgs, fm_global, device)
 
         output_local, _, pool_local = aux_model(patchs_var)
         #print(fusion_var.shape)
         output_fusion = fusion_model(pool_global, pool_local)
 
-        med_porbs, findings_outputs = model(att_feats = output_fusion, input_ids = input_ids, input_type = 'img')
+        med_porbs, findings_outputs = model(att_feats=output_fusion, input_ids=input_ids, input_type='img')
+        # print("med_porbs shape: {}".format(med_porbs.shape))  # [16, 229]
+        # print("medterm_labels shape: {}".format(medterm_labels.shape))  # [16, 50176]
 
         med_loss = med_crit(med_porbs, medterm_labels)
         caption_loss = outputs_crit(findings_outputs.view(-1, findings_outputs.size(-1)), lm_labels.view(-1))
@@ -243,7 +245,7 @@ def update_encoder_model(path):
 
 
 def train(device):
-    #best_val_score = None
+    best_val_score = None
     best_val_score = eval(device)['CIDEr']
     
     for epoch in trange(int(opt.max_epochs), desc="Epoch"):
@@ -251,7 +253,7 @@ def train(device):
         images_train()  # 医学影像特征提取模型训练
 
         if epoch % opt.val_every_epoch == 0:
-            lang_stats = eval()
+            lang_stats = eval(device)
 
             current_score = lang_stats['CIDEr']
 
@@ -355,8 +357,9 @@ def eval(device):
             # 解码文本
             findings_samples = decode_transformer_findings(img_train_dataset.idw2word, findings_seq)
             findings_truths = decode_transformer_findings(img_train_dataset.idw2word, lm_labels)
-            # print("label", lm_labels)
-            # print(lm_labels)
+            print("findings_samples :{}".format(findings_samples))
+            print("findings_truths :{}".format(findings_truths))
+
 
             #  存储预测结果
             for i, ix in enumerate(image_ids):
@@ -601,7 +604,7 @@ if __name__ == '__main__':
         tag_decoder = pickle.load(f)
 
     cnn_model = Densenet121_AG(pretrained=False, num_classes=opt.num_medterm).to(device)
-    aux_model = Densenet121_AG(pretrained=False, num_classes =opt.num_medterm).to(device)
+    aux_model = Densenet121_AG(pretrained=False, num_classes=opt.num_medterm).to(device)
     fusion_model = Fusion_Branch(input_size=1024, output_size=opt.num_medterm, device=device).to(device)
     model = SentenceLMHeadModel(tag_decoder, config, device=device).to(device)
 
@@ -613,9 +616,9 @@ if __name__ == '__main__':
         fusion_model = nn.DataParallel(fusion_model)
 
     # 主要用于二分类
-    med_crit = nn.BCELoss().cuda()
+    med_crit = nn.BCELoss().to(device)
     # 主要用于多分类
-    outputs_crit = nn.CrossEntropyLoss(ignore_index=-1).cuda()
+    outputs_crit = nn.CrossEntropyLoss(ignore_index=-1).to(device)
 
     rnn_NoamOpt = NoamOpt(opt.d_model, opt.factor, opt.warmup, torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
     # rnn_NoamOpt = optim.Adam(model.parameters(), lr=opt.learning_rate, weight_decay=opt.weight_decay) 

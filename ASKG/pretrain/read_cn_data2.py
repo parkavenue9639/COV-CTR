@@ -27,7 +27,7 @@ class CHXrayDataSet2(Dataset):
             self.findings = pkl.load(f)  # 影像对应的文本描述
             self.findings_labels = pkl.load(f)  # 文本描述的标签
             self.image = pkl.load(f)  # 影像文件名
-            self.medterms = pkl.load(f)  # 影像对应的医学术语
+            self.medterms = pkl.load(f)  # 影像对应的医学术语  length:1470
 
         f.close()
 
@@ -53,12 +53,14 @@ class CHXrayDataSet2(Dataset):
             img = self.transform(img)  # 数据增强，对图像进行变换
 
         #print(img.size(), image_id)
-        medterm_labels = np.zeros(self.num_medterm)
+        medterm_labels = np.zeros(229)
+        # medterm_labels = np.zeros(self.num_medterm)
         medterms = self.medterms[ix]
         for medterm in medterms:
             # medterm_labels[medterm] = 1
             if medterm < self.num_medterm:
                 medterm_labels[medterm] = 1
+        # print("medterm_labels shape{}".format(medterm_labels.shape))  # (50176,)
 
         findings = self.findings[ix]
         findings_labels = self.findings_labels[ix]
